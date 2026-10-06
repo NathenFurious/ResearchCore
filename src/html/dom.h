@@ -1,67 +1,59 @@
-#include "dom.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef DOM_H
+#define DOM_H
 
-DOMNode* dom_create_node(const char* tag_name) {
-    // Allocate heap space for a single DOMNode
-    DOMNode* node = (DOMNode*)malloc(sizeof(DOMNode));
-    if (node == NULL) {
-        return NULL; // Memory allocation check
-    }
+#include <stddef.h>
 
-    // Initialize fields
-    strncpy(node->tag_name, tag_name, sizeof(node->tag_name) - 1);
-    node->tag_name[sizeof(node->tag_name) - 1] = '\0';
-    node->inner_text = NULL;
-    node->parent = NULL;
-    node->first_child = NULL;
-    node->next_sibling = NULL;
+typedef enum {
+    DOM_DOCUMENT,
+    DOM_ELEMENT,
+    DOM_TEXT,
+    DOM_COMMENT,
+    DOM_DOCTYPE
+} DOMNodeType;
 
-    return node;
-}
+typedef struct DOMAttribute {
+    char* name;
+    char* value;
+    struct DOMAttribute* next;
+} DOMAttribute;
 
-void dom_free_node(DOMNode* node) {
-    if (node == NULL) return;
+typedef struct DOMNode {
+    DOMNodeType type;
 
-    if (node->inner_text != NULL) {
-        free(node->inner_text);
-    }
-    
-    // Recursively free child and sibling nodes
-    dom_free_node(node->first_child);
-    dom_free_node(node->next_sibling);
+    char* tag_name;
+    char* text;
 
-    free(node);
-}
+    DOMAttribute* attributes;
 
-const char* parse_html_tag(const char* cursor, char* out_tag_name, size_t max_len) {
-    // Scan until we find the opening '<'
-    while (*cursor != '\0' && *cursor != '<') {
-        cursor++;
-    }
+    struct DOMNode* parent;
+    struct DOMNode* first_child;
+    struct DOMNode* last_child;
+    struct DOMNode* next_sibling;
+} DOMNode;
 
-    if (*cursor == '\0') return NULL; // End of string reached
+DOMNode* dom_create_node(
+    DOMNodeType type,
+    const char* tag_name
+);
 
-    cursor++; // Move past '<'
-    const char* start = cursor;
+DOMNode* dom_create_text(
+    const char* text,
+    size_t length
+);
 
-    // Scan forward to find the closing '>'
-    while (*cursor != '\0' && *cursor != '>' && *cursor != ' ') {
-        cursor++;
-    }
+void dom_append_child(
+    DOMNode* parent,
+    DOMNode* child
+);
 
-    // Calculate length using pointer subtraction
-    size_t length = (size_t)(cursor - start);
-    if (length >= max_len) length = max_len - 1;
+void dom_free_node(
+    DOMNode* node
+);
 
-    // Copy tag name into output buffer
-    strncpy(out_tag_name, start, length);
-    out_tag_name[length] = '\0';
+const char* parse_html_tag(
+    const char* cursor,
+    char* out_tag_name,
+    size_t max_len
+);
 
-    // Return the updated cursor address sitting at '>'
-    while (*cursor != '\0' && *cursor != '>') {
-        cursor++;
-    }
-    return (*cursor == '>') ? cursor + 1 : cursor;
-}
+#endif /* DOM_H */
