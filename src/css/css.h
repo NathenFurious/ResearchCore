@@ -3,17 +3,33 @@
 
 #include <stddef.h>
 
-// Represents a CSS rule (e.g., h1 { color: red; })
+typedef struct CSSDeclaration {
+    char* property;
+    char* value;
+    struct CSSDeclaration* next;
+} CSSDeclaration;
+
 typedef struct CSSRule {
-    char selector[32];
-    char property[32];
-    char value[32];
+    char* selector;
+    CSSDeclaration* declarations;
     struct CSSRule* next;
 } CSSRule;
 
-// Function declarations
-CSSRule* css_create_rule(const char* selector, const char* property, const char* value);
-void css_free_rules(CSSRule* head);
-const char* parse_css_rule(const char* cursor, char* out_selector, char* out_prop, char* out_val);
+CSSRule* css_create_rule(const char* selector);
 
-#endif // CSS_H
+CSSDeclaration* css_add_declaration(
+    CSSRule* rule,
+    const char* property,
+    const char* value
+);
+
+void css_free_rule(CSSRule* rule);
+
+void css_free_rules(CSSRule* head);
+
+const char* css_parse_rule(
+    const char* source,
+    CSSRule** out_rule
+);
+
+#endif /* CSS_H */
